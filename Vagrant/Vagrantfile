@@ -1,0 +1,34 @@
+Vagrant.configure("2") do |config|
+
+    config.vm.define "nginx" do |nginx|
+    nginx.vm.hostname = "nginx"
+    nginx.vm.box = "debian/buster64"
+    nginx.vm.network "private_network", ip: "172.17.177.40", virtualbox__intnet: true
+    nginx.vm.network "forwarded_port", guest: 3001, host: 3001
+    config.ssh.guest_port = 2222
+    nginx.vbguest.auto_update = true
+    nginx.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048" # valor em MB
+      end
+  
+    nginx.vm.provision "shell", inline: <<-SHELL
+        set -euxo pipefail
+        # Configure ssh vagrant
+        mkdir -p /home/vagrant/.ssh/
+        apt-get install -y openssh-server curl
+        curl https://get.docker.com/ > get-docker.sh | chmod +x get-docker.sh
+        bash get-docker.sh
+        # Add the current user to the Docker group
+        sudo usermod -aG docker vagrant
+        sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
+        chown -R vagrant:vagrant /home/vagrant/.ssh
+        echo "StrictHostKeyChecking no" > /home/vagrant/.ssh/config
+        chown -R vagrant:vagrant /home/vagrant/.ssh
+        sudo chown 1000:1000 /home/vagrant/.ssh
+        echo "root:aluno" | chpasswd
+        /etc/init.d/ssh restart
+
+    SHELL
+    end 
+end
+  

@@ -1,0 +1,13 @@
+---
+src_dir: ../../../Docker
+src_dir_files: ../files
+home_dir: /home/vagrant
+docker_api_path: /lib/systemd/system
+dockerfile_path: /home/vagrant/docker-build
+docker_api: "-H=tcp://127.0.0.1:2375"
+docker_compose_version: "1.29.2"
+docker_port_nginx: "3001"
+docker_images:
+  - name: nginx_app
+    tag: latest
+    path: "{{ dockerfile_path }}"

@@ -1,0 +1,79 @@
+---
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+  become: yes
+
+- name: "Configura API do Docker"
+  copy:
+    src: "{{ src_dir_files }}/docker.service"
+    dest: "{{ docker_api_path }}/docker.service"
+    remote_src: yes
+  become: yes
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+  notify:
+    - Restart Docker
+  become: true
+
+- name: Enable Docker API
+  systemd:
+    name: docker
+    enabled: true
+    state: restarted
+  become: yes
+
+- name: Create build directory
+  file:
+    path: "{{ dockerfile_path }}"
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+  become: yes
+
+- name: "Cria Dockerfile"
+  template:
+    src: "templates/Dockerfiles.j2"
+    dest: "{{ dockerfile_path }}/Dockerfile"
+  become: yes
+
+- name: "Cria nginx.conf"
+  template:
+    src: "templates/nginx.conf.j2"
+    dest: "{{ dockerfile_path }}/nginx.conf"
+  become: yes
+
+- name: "Cria docker-compose.yml"
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{ dockerfile_path }}/docker-compose.yml"
+  become: yes
+
+- name: Build Docker images
+  community.docker.docker_image:
+    name: "{{ item.name }}:{{ item.tag }}"
+    build:
+      path: "{{ item.path }}"
+    source: build
+  with_items: "{{ docker_images }}"
+  become: yes
+
+- name: Download Docker Compose
+  shell: curl -L "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  args:
+    creates: /usr/local/bin/docker-compose
+    executable: /bin/bash
+  become: yes
+
+- name: Make Docker Compose executable
+  file:
+    path: /usr/local/bin/docker-compose
+    mode: "a+x"
+  become: yes
+
+- name: Run docker-compose
+  ansible.builtin.shell: "cd {{ dockerfile_path }} && docker-compose up -d"
