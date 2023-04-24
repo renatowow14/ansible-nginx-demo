@@ -29,3 +29,5 @@ vagrant up
 
 export VAR=$(vagrant ssh-config | grep "IdentityFile" | awk '{ print $2 }')
 sed -i "s|CHANGE|$VAR|g" ../inventory.ini
+cd ..
+ansible-playbook -i inventory.ini playbook.yml

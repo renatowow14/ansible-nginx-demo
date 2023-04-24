@@ -9,7 +9,6 @@
   copy:
     src: "{{ src_dir_files }}/docker.service"
     dest: "{{ docker_api_path }}/docker.service"
-    remote_src: yes
   become: yes
 
 - name: Reload systemd
@@ -77,3 +76,4 @@
 
 - name: Run docker-compose
   ansible.builtin.shell: "cd {{ dockerfile_path }} && docker-compose up -d"
+  become: yes
